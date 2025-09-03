@@ -27,13 +27,6 @@ pub fn ErrPayload(comptime T: type) type {
             };
         }
 
-        pub fn setMsg(self: *Self, string: []const u8) void {
-            self.errMsg = self.allocator.dupe(u8, string) catch blk: {
-                std.log.err("An error occured while setting errMsg: {s}", .{string});
-                break :blk null;
-            };
-        }
-
         pub fn getErrMsg(self: *Self) []const u8 {
             if (self.errMsg) |errMsg| {
                 return errMsg;
