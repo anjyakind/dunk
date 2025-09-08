@@ -131,4 +131,4 @@ If you’d like to help improve DUNK, please fork the repository and submit a pu
 
 ## LICENSE
 
-This project is licensed under the [MIT License](README.md).
+This project is licensed under the [MIT License](LICENSE).
