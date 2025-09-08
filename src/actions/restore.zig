@@ -2,13 +2,14 @@ const std = @import("std");
 const utils = @import("utils");
 const config = utils.config;
 const payload = utils.payload;
+const restore_test = @import("restore_test.zig");
 
 const RestoreErrors = error{};
 
-pub const RestoreActionName = "delete";
+pub const RestoreActionName = "restore";
 
 pub const RestoreActionConfig = struct {
-    // files and folders to restore
+    /// files and folders to restore
     ff_to_restore: []const []const u8,
     config: config.DunkConfig,
     payload: *payload.ErrPayload(void),
@@ -47,3 +48,7 @@ pub const RestoreAction = struct {
 
     fn action(_: *Self, _: *payload.ErrPayload(void)) RestoreErrors!void {}
 };
+
+test {
+    _ = restore_test;
+}

@@ -2,15 +2,15 @@ const std = @import("std");
 const utils = @import("utils");
 const config = utils.config;
 const payload = utils.payload;
-const DeleteAction = @import("delete.zig").DeleteAction;
+const WipeAction = @import("wipe.zig").WipeAction;
 
-test "test that delete action does not crash" {
+test "test that wipe action does not crash" {
     var errPayload = payload.ErrPayload(void).init(.{
         .allocator = std.testing.allocator,
     });
 
-    try DeleteAction.run(.{
-        .ff_to_delete = &[_][]const u8{""},
+    try WipeAction.run(.{
+        .ff_to_trash = &[_][]const u8{""},
         .allocator = std.testing.allocator,
         .payload = &errPayload,
         .config = config.DunkConfig{},

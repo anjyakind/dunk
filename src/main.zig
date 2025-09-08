@@ -8,6 +8,7 @@ const utils = @import("utils");
 const appargs = @import("args").appargs;
 const config = utils.config;
 const payload = utils.payload;
+const DunkArgs = appargs.DunkArgs;
 
 extern fn addSum(a: i64, b: i64) i64;
 
@@ -36,34 +37,34 @@ pub fn main() !void {
     const cmdArgs = try std.process.argsAlloc(allocator);
     defer std.process.argsFree(allocator, cmdArgs);
 
-    var argParser = try appargs.DunkArgs.init(allocator);
-    defer argParser.deinit();
+    var dunk_arg_parser = try DunkArgs.init(allocator);
+    defer dunk_arg_parser.deinit();
 
-    try argParser.parseArgs(cmdArgs);
+    try dunk_arg_parser.parseArgs(cmdArgs);
 
-    if (processHelpArg(&argParser, usage) or processVersionArg(&argParser)) {
+    if (processHelpArg(&dunk_arg_parser, usage) or processVersionArg(&dunk_arg_parser)) {
         return;
     }
 
-    const action = argParser.getActionSubcommand();
-    const dunkConfig = config.DunkConfig{};
+    const action = dunk_arg_parser.getActionSubcommand();
+    const dunk_config = config.DunkConfig{};
 
     var errPayload = payload.ErrPayload(void).init(.{ .allocator = allocator });
     defer errPayload.deinit();
 
     if (action) |validAction| {
-        var subcommandParser = argParser.getActionSubArgParser(validAction) orelse unreachable;
+        var subcommandParser = dunk_arg_parser.getActionSubArgParser(validAction) orelse unreachable;
         try subcommandParser.parseArgs(cmdArgs[2..]);
         switch (validAction) {
             .delete => {
-                const argVal = subcommandParser.getParsedArgs(appargs.DunkArgs.fileOrFolderArg.name) orelse unreachable;
-                switch (argVal) {
+                const arg_val = subcommandParser.getParsedArgs(DunkArgs.fileOrFolderArg.name) orelse unreachable;
+                switch (arg_val) {
                     .strings => |ff_to_delete| {
                         actions.delete.DeleteAction.run(.{
                             .ff_to_delete = ff_to_delete,
                             .allocator = allocator,
                             .payload = &errPayload,
-                            .config = dunkConfig,
+                            .config = dunk_config,
                         }) catch {
                             std.log.err("{s}", .{errPayload.getErrMsg()});
                             return;
@@ -73,14 +74,14 @@ pub fn main() !void {
                 }
             },
             .restore => {
-                const argVal = subcommandParser.getParsedArgs(appargs.DunkArgs.fileOrFolderArg.name) orelse unreachable;
-                switch (argVal) {
+                const arg_val = subcommandParser.getParsedArgs(DunkArgs.fileOrFolderArg.name) orelse unreachable;
+                switch (arg_val) {
                     .strings => |ff_to_restore| {
                         actions.restore.RestoreAction.run(.{
                             .ff_to_restore = ff_to_restore,
                             .allocator = allocator,
                             .payload = &errPayload,
-                            .config = dunkConfig,
+                            .config = dunk_config,
                         }) catch {
                             std.log.err("{s}", .{errPayload.getErrMsg()});
                         };
@@ -88,20 +89,53 @@ pub fn main() !void {
                     else => unreachable,
                 }
             },
-            // TODO: Add all other actions e.g trash, wipe
-            else => return,
+            .wipe => {
+                const arg_val = subcommandParser.getParsedArgs(DunkArgs.fileOrFolderArg.name) orelse unreachable;
+                switch (arg_val) {
+                    .strings => |ff_to_wipe| {
+                        actions.wipe.WipeAction.run(.{
+                            .ff_to_wipe = ff_to_wipe,
+                            .allocator = allocator,
+                            .payload = &errPayload,
+                            .config = dunk_config,
+                        }) catch {
+                            std.log.err("{s}", .{errPayload.getErrMsg()});
+                        };
+                    },
+                    else => unreachable,
+                }
+            },
+            .remove => {
+                const arg_val = subcommandParser.getParsedArgs(DunkArgs.fileOrFolderArg.name) orelse unreachable;
+                switch (arg_val) {
+                    .strings => |ff_to_delete| {
+                        actions.delete.DeleteAction.run(.{
+                            .ff_to_delete = ff_to_delete,
+                            .allocator = allocator,
+                            .payload = &errPayload,
+                            .config = dunk_config,
+                        }) catch {
+                            std.log.err("{s}", .{errPayload.getErrMsg()});
+                            return;
+                        };
+                    },
+                    else => unreachable,
+                }
+            },
         }
     } else {
         try unexpectedCommandUsageWarning(allocator);
     }
 }
 
+//************************Helpers**********************************************
 /// Warn User about incorrect usage of main dunk command
 fn unexpectedCommandUsageWarning(allocator: std.mem.Allocator) !void {
     const arguments = [_][]const u8{
         actions.delete.DeleteActionName,
         actions.restore.RestoreActionName,
         actions.trash.TrashActionName,
+        actions.wipe.WipeActionName,
         appargs.DunkArgs.helpFlag.name,
         appargs.DunkArgs.versionFlag.name,
     };
